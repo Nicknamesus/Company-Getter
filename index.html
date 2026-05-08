@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>ZEFIX — Vaud Leads</title>
   <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@700;800&display=swap" rel="stylesheet" />
-  <script src="https://cdn.jsdelivr.net/npm/docx@8.5.0/build/index.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/docx@7.8.2/build/index.js"></script>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -31,7 +31,6 @@
       padding: 48px 20px 80px;
     }
 
-    /* Background grid */
     body::before {
       content: '';
       position: fixed;
@@ -51,10 +50,7 @@
       max-width: 680px;
     }
 
-    /* Header */
-    .header {
-      margin-bottom: 48px;
-    }
+    .header { margin-bottom: 48px; }
 
     .tag {
       font-size: 11px;
@@ -74,9 +70,7 @@
       color: var(--text);
     }
 
-    h1 span {
-      color: var(--accent);
-    }
+    h1 span { color: var(--accent); }
 
     .sub {
       margin-top: 12px;
@@ -85,7 +79,6 @@
       line-height: 1.6;
     }
 
-    /* Config card */
     .card {
       background: var(--surface);
       border: 1px solid var(--border);
@@ -102,11 +95,7 @@
       margin-bottom: 16px;
     }
 
-    .row {
-      display: flex;
-      gap: 12px;
-      flex-wrap: wrap;
-    }
+    .row { display: flex; gap: 12px; flex-wrap: wrap; }
 
     .field {
       display: flex;
@@ -136,11 +125,8 @@
       -webkit-appearance: none;
     }
 
-    select:focus, input:focus {
-      border-color: var(--accent);
-    }
+    select:focus, input:focus { border-color: var(--accent); }
 
-    /* Button */
     .btn {
       width: 100%;
       padding: 16px;
@@ -164,7 +150,6 @@
     .btn:active { transform: scale(0.99); }
     .btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
 
-    /* Log */
     .log {
       background: var(--surface);
       border: 1px solid var(--border);
@@ -178,14 +163,12 @@
     }
 
     .log.visible { display: block; }
-
     .log-line { display: flex; gap: 10px; }
     .log-line .ts { color: var(--muted); flex-shrink: 0; }
     .log-line .ok { color: var(--accent); }
     .log-line .err { color: var(--danger); }
     .log-line .info { color: var(--accent2); }
 
-    /* Progress bar */
     .progress-wrap {
       height: 2px;
       background: var(--border);
@@ -200,18 +183,6 @@
       background: var(--accent);
       width: 0%;
       transition: width 0.3s ease;
-    }
-
-    /* Result count */
-    .result-badge {
-      display: inline-block;
-      background: rgba(127,255,110,0.1);
-      color: var(--accent);
-      border: 1px solid rgba(127,255,110,0.2);
-      font-size: 11px;
-      padding: 4px 10px;
-      border-radius: 2px;
-      margin-top: 12px;
     }
 
     .spinner {
@@ -230,8 +201,8 @@
   <div class="wrap">
     <div class="header">
       <div class="tag">// Lead Generator</div>
-      <h1>ZEFIX<br/><span>Vaud</span></h1>
-      <p class="sub">Génère un .docx avec les dernières entreprises enregistrées<br/>dans le canton de Vaud — prêt à prospecter.</p>
+      <h1>ZEFIX<br/><span>Leads</span></h1>
+      <p class="sub">Génère un .docx avec les dernières entreprises enregistrées<br/>en Suisse — prêt à prospecter.</p>
     </div>
 
     <div class="card">
@@ -269,7 +240,6 @@
   </div>
 
   <script>
-    window.docx = window.docx || window.docxModule || docx;
     function ts() {
       return new Date().toLocaleTimeString('fr-CH', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
     }
@@ -290,39 +260,30 @@
     }
 
     async function fetchCompanies(canton, count) {
-      const body = JSON.stringify({
-        canton: [canton],
-        maxEntries: count,
-        offset: 0,
-        searchType: 'ACTIVE'
-      });
-
       const res = await fetch('/api/zefix', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ canton, count })
       });
-
-      if (!res.ok) throw new Error(`ZEFIX HTTP ${res.status}`);
+      if (!res.ok) throw new Error(`API error ${res.status}`);
       const data = await res.json();
       return data.list || data.firms || data || [];
     }
 
     function makeCell(text, opts = {}) {
-      const { docx } = const { docx } = window;;
-      const border = { style: docx.BorderStyle.SINGLE, size: 1, color: 'CCCCCC' };
+      const border = { style: BorderStyle.SINGLE, size: 1, color: 'CCCCCC' };
       const borders = { top: border, bottom: border, left: border, right: border };
 
-      return new docx.TableCell({
+      return new TableCell({
         borders,
-        width: { size: opts.width || 2000, type: docx.WidthType.DXA },
+        width: { size: opts.width || 2000, type: WidthType.DXA },
         shading: opts.header
-          ? { fill: '1F3864', type: docx.ShadingType.CLEAR }
-          : { fill: opts.alt ? 'F0F4F8' : 'FFFFFF', type: docx.ShadingType.CLEAR },
+          ? { fill: '1F3864', type: ShadingType.CLEAR }
+          : { fill: opts.alt ? 'F0F4F8' : 'FFFFFF', type: ShadingType.CLEAR },
         margins: { top: 80, bottom: 80, left: 120, right: 120 },
-        verticalAlign: docx.VerticalAlign.CENTER,
-        children: [new docx.Paragraph({
-          children: [new docx.TextRun({
+        verticalAlign: VerticalAlign.CENTER,
+        children: [new Paragraph({
+          children: [new TextRun({
             text: String(text),
             font: 'Arial',
             size: opts.header ? 20 : 18,
@@ -334,39 +295,30 @@
     }
 
     function buildDocx(companies, canton) {
-      const { docx } = const { docx } = window;;
       const now = new Date().toLocaleDateString('fr-CH');
-
       const colWidths = [480, 3000, 1600, 1500, 1800, 1440, 1440, 1800];
       const totalWidth = colWidths.reduce((a, b) => a + b, 0);
-
       const headers = ['#', 'Raison sociale', 'Type', 'Localité', 'UID', 'Téléphone', 'Email', 'Notes'];
 
-      const headerRow = new docx.TableRow({
+      const headerRow = new TableRow({
         tableHeader: true,
         children: headers.map((h, i) => makeCell(h, { width: colWidths[i], header: true }))
       });
 
-      const dataRows = companies.map((c, i) => {
-        const alt = i % 2 === 1;
-        return new docx.TableRow({
-          children: [
-            makeCell(i + 1, { width: colWidths[0], alt }),
-            makeCell(c.name || '', { width: colWidths[1], alt }),
-            makeCell(c.legalForm?.nameFr || c.legalForm?.nameDe || '', { width: colWidths[2], alt }),
-            makeCell(c.address?.city || '', { width: colWidths[3], alt }),
-            makeCell(c.uid || '', { width: colWidths[4], alt }),
-            makeCell('', { width: colWidths[5], alt }),
-            makeCell('', { width: colWidths[6], alt }),
-            makeCell('', { width: colWidths[7], alt }),
-          ]
-        });
-      });
+      const dataRows = companies.map((c, i) => new TableRow({
+        children: [
+          makeCell(i + 1,                                                          { width: colWidths[0], alt: i%2===1 }),
+          makeCell(c.name || '',                                                   { width: colWidths[1], alt: i%2===1 }),
+          makeCell(c.legalForm?.nameFr || c.legalForm?.nameDe || '',              { width: colWidths[2], alt: i%2===1 }),
+          makeCell(c.address?.city || '',                                          { width: colWidths[3], alt: i%2===1 }),
+          makeCell(c.uid || '',                                                    { width: colWidths[4], alt: i%2===1 }),
+          makeCell('', { width: colWidths[5], alt: i%2===1 }),
+          makeCell('', { width: colWidths[6], alt: i%2===1 }),
+          makeCell('', { width: colWidths[7], alt: i%2===1 }),
+        ]
+      }));
 
-      const doc = new docx.Document({
-        styles: {
-          default: { document: { run: { font: 'Arial', size: 20 } } }
-        },
+      const doc = new Document({
         sections: [{
           properties: {
             page: {
@@ -375,21 +327,21 @@
             }
           },
           children: [
-            new docx.Paragraph({
-              children: [new docx.TextRun({ text: `Nouvelles entreprises — Canton de ${canton}`, font: 'Arial', size: 40, bold: true, color: '1F3864' })]
+            new Paragraph({
+              children: [new TextRun({ text: `Nouvelles entreprises — Canton de ${canton}`, font: 'Arial', size: 40, bold: true, color: '1F3864' })]
             }),
-            new docx.Paragraph({
-              children: [new docx.TextRun({ text: `Généré le ${now}  ·  ${companies.length} entreprises  ·  Source: ZEFIX`, font: 'Arial', size: 16, color: '999999' })]
+            new Paragraph({
+              children: [new TextRun({ text: `Généré le ${now}  ·  ${companies.length} entreprises  ·  Source: ZEFIX`, font: 'Arial', size: 16, color: '999999' })]
             }),
-            new docx.Paragraph({ children: [new docx.TextRun('')] }),
-            new docx.Table({
-              width: { size: totalWidth, type: docx.WidthType.DXA },
+            new Paragraph({ children: [new TextRun({ text: '' })] }),
+            new Table({
+              width: { size: totalWidth, type: WidthType.DXA },
               columnWidths: colWidths,
               rows: [headerRow, ...dataRows]
             }),
-            new docx.Paragraph({ children: [new docx.TextRun('')] }),
-            new docx.Paragraph({
-              children: [new docx.TextRun({ text: 'Téléphone / Email à compléter via local.ch', font: 'Arial', size: 16, color: 'aaaaaa', italics: true })]
+            new Paragraph({ children: [new TextRun({ text: '' })] }),
+            new Paragraph({
+              children: [new TextRun({ text: 'Téléphone / Email à compléter via local.ch', font: 'Arial', size: 16, color: 'aaaaaa', italics: true })]
             })
           ]
         }]
@@ -429,10 +381,10 @@
         const doc = buildDocx(companies, canton);
         setProgress(85);
 
-        const buffer = await docx.Packer.toBlob(doc);
+        const blob = await Packer.toBlob(doc);
         setProgress(100);
 
-        const url = URL.createObjectURL(buffer);
+        const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
         a.download = `zefix_${canton.toLowerCase()}_${new Date().toISOString().slice(0,10)}.docx`;
