@@ -1,0 +1,454 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ZEFIX — Vaud Leads</title>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@700;800&display=swap" rel="stylesheet" />
+  <script src="https://unpkg.com/docx@8.5.0/build/index.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #0a0a0f;
+      --surface: #111118;
+      --border: #1e1e2e;
+      --accent: #7fff6e;
+      --accent2: #3dffd0;
+      --text: #e8e8f0;
+      --muted: #555570;
+      --danger: #ff4f4f;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'DM Mono', monospace;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 48px 20px 80px;
+    }
+
+    /* Background grid */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(127,255,110,0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(127,255,110,0.03) 1px, transparent 1px);
+      background-size: 40px 40px;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .wrap {
+      position: relative;
+      z-index: 1;
+      width: 100%;
+      max-width: 680px;
+    }
+
+    /* Header */
+    .header {
+      margin-bottom: 48px;
+    }
+
+    .tag {
+      font-size: 11px;
+      letter-spacing: 0.2em;
+      color: var(--accent);
+      text-transform: uppercase;
+      margin-bottom: 12px;
+      opacity: 0.8;
+    }
+
+    h1 {
+      font-family: 'Syne', sans-serif;
+      font-size: clamp(32px, 7vw, 56px);
+      font-weight: 800;
+      line-height: 1;
+      letter-spacing: -0.02em;
+      color: var(--text);
+    }
+
+    h1 span {
+      color: var(--accent);
+    }
+
+    .sub {
+      margin-top: 12px;
+      font-size: 13px;
+      color: var(--muted);
+      line-height: 1.6;
+    }
+
+    /* Config card */
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 24px;
+      margin-bottom: 20px;
+    }
+
+    .card-title {
+      font-size: 11px;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 16px;
+    }
+
+    .row {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .field {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      flex: 1;
+      min-width: 140px;
+    }
+
+    label {
+      font-size: 11px;
+      color: var(--muted);
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+    }
+
+    select, input[type="number"] {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      color: var(--text);
+      font-family: 'DM Mono', monospace;
+      font-size: 13px;
+      padding: 10px 12px;
+      border-radius: 2px;
+      outline: none;
+      transition: border-color 0.15s;
+      -webkit-appearance: none;
+    }
+
+    select:focus, input:focus {
+      border-color: var(--accent);
+    }
+
+    /* Button */
+    .btn {
+      width: 100%;
+      padding: 16px;
+      background: var(--accent);
+      color: #0a0a0f;
+      font-family: 'Syne', sans-serif;
+      font-size: 15px;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      border: none;
+      border-radius: 2px;
+      cursor: pointer;
+      transition: opacity 0.15s, transform 0.1s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+    }
+
+    .btn:hover { opacity: 0.88; }
+    .btn:active { transform: scale(0.99); }
+    .btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+
+    /* Log */
+    .log {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 20px;
+      margin-top: 20px;
+      font-size: 12px;
+      line-height: 1.8;
+      min-height: 60px;
+      display: none;
+    }
+
+    .log.visible { display: block; }
+
+    .log-line { display: flex; gap: 10px; }
+    .log-line .ts { color: var(--muted); flex-shrink: 0; }
+    .log-line .ok { color: var(--accent); }
+    .log-line .err { color: var(--danger); }
+    .log-line .info { color: var(--accent2); }
+
+    /* Progress bar */
+    .progress-wrap {
+      height: 2px;
+      background: var(--border);
+      border-radius: 1px;
+      margin-top: 16px;
+      overflow: hidden;
+      display: none;
+    }
+    .progress-wrap.visible { display: block; }
+    .progress-bar {
+      height: 100%;
+      background: var(--accent);
+      width: 0%;
+      transition: width 0.3s ease;
+    }
+
+    /* Result count */
+    .result-badge {
+      display: inline-block;
+      background: rgba(127,255,110,0.1);
+      color: var(--accent);
+      border: 1px solid rgba(127,255,110,0.2);
+      font-size: 11px;
+      padding: 4px 10px;
+      border-radius: 2px;
+      margin-top: 12px;
+    }
+
+    .spinner {
+      width: 16px;
+      height: 16px;
+      border: 2px solid rgba(10,10,15,0.3);
+      border-top-color: #0a0a0f;
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+      display: none;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="header">
+      <div class="tag">// Lead Generator</div>
+      <h1>ZEFIX<br/><span>Vaud</span></h1>
+      <p class="sub">Génère un .docx avec les dernières entreprises enregistrées<br/>dans le canton de Vaud — prêt à prospecter.</p>
+    </div>
+
+    <div class="card">
+      <div class="card-title">// Config</div>
+      <div class="row">
+        <div class="field">
+          <label>Canton</label>
+          <select id="canton">
+            <option value="VD" selected>Vaud (VD)</option>
+            <option value="GE">Genève (GE)</option>
+            <option value="FR">Fribourg (FR)</option>
+            <option value="VS">Valais (VS)</option>
+            <option value="NE">Neuchâtel (NE)</option>
+            <option value="ZH">Zürich (ZH)</option>
+            <option value="BE">Berne (BE)</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Nombre</label>
+          <input type="number" id="count" value="100" min="10" max="200" />
+        </div>
+      </div>
+    </div>
+
+    <button class="btn" id="btn" onclick="run()">
+      <span class="spinner" id="spinner"></span>
+      <span id="btn-label">Générer le .docx</span>
+    </button>
+
+    <div class="progress-wrap" id="progress-wrap">
+      <div class="progress-bar" id="progress-bar"></div>
+    </div>
+
+    <div class="log" id="log"></div>
+  </div>
+
+  <script>
+    function ts() {
+      return new Date().toLocaleTimeString('fr-CH', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    }
+
+    function log(msg, type = 'info') {
+      const el = document.getElementById('log');
+      el.classList.add('visible');
+      const line = document.createElement('div');
+      line.className = 'log-line';
+      line.innerHTML = `<span class="ts">${ts()}</span><span class="${type}">${msg}</span>`;
+      el.appendChild(line);
+      el.scrollTop = el.scrollHeight;
+    }
+
+    function setProgress(pct) {
+      document.getElementById('progress-wrap').classList.add('visible');
+      document.getElementById('progress-bar').style.width = pct + '%';
+    }
+
+    async function fetchCompanies(canton, count) {
+      const body = JSON.stringify({
+        canton: [canton],
+        maxEntries: count,
+        offset: 0,
+        searchType: 'ACTIVE'
+      });
+
+      const res = await fetch('https://www.zefix.ch/ZefixREST/api/v1/firm/search.json', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+        body
+      });
+
+      if (!res.ok) throw new Error(`ZEFIX HTTP ${res.status}`);
+      const data = await res.json();
+      return data.list || data.firms || data || [];
+    }
+
+    function makeCell(text, opts = {}) {
+      const { docx } = window;
+      const border = { style: docx.BorderStyle.SINGLE, size: 1, color: 'CCCCCC' };
+      const borders = { top: border, bottom: border, left: border, right: border };
+
+      return new docx.TableCell({
+        borders,
+        width: { size: opts.width || 2000, type: docx.WidthType.DXA },
+        shading: opts.header
+          ? { fill: '1F3864', type: docx.ShadingType.CLEAR }
+          : { fill: opts.alt ? 'F0F4F8' : 'FFFFFF', type: docx.ShadingType.CLEAR },
+        margins: { top: 80, bottom: 80, left: 120, right: 120 },
+        verticalAlign: docx.VerticalAlign.CENTER,
+        children: [new docx.Paragraph({
+          children: [new docx.TextRun({
+            text: String(text),
+            font: 'Arial',
+            size: opts.header ? 20 : 18,
+            bold: !!opts.header,
+            color: opts.header ? 'FFFFFF' : '1a1a2e'
+          })]
+        })]
+      });
+    }
+
+    function buildDocx(companies, canton) {
+      const { docx } = window;
+      const now = new Date().toLocaleDateString('fr-CH');
+
+      const colWidths = [480, 3000, 1600, 1500, 1800, 1440, 1440, 1800];
+      const totalWidth = colWidths.reduce((a, b) => a + b, 0);
+
+      const headers = ['#', 'Raison sociale', 'Type', 'Localité', 'UID', 'Téléphone', 'Email', 'Notes'];
+
+      const headerRow = new docx.TableRow({
+        tableHeader: true,
+        children: headers.map((h, i) => makeCell(h, { width: colWidths[i], header: true }))
+      });
+
+      const dataRows = companies.map((c, i) => {
+        const alt = i % 2 === 1;
+        return new docx.TableRow({
+          children: [
+            makeCell(i + 1, { width: colWidths[0], alt }),
+            makeCell(c.name || '', { width: colWidths[1], alt }),
+            makeCell(c.legalForm?.nameFr || c.legalForm?.nameDe || '', { width: colWidths[2], alt }),
+            makeCell(c.address?.city || '', { width: colWidths[3], alt }),
+            makeCell(c.uid || '', { width: colWidths[4], alt }),
+            makeCell('', { width: colWidths[5], alt }),
+            makeCell('', { width: colWidths[6], alt }),
+            makeCell('', { width: colWidths[7], alt }),
+          ]
+        });
+      });
+
+      const doc = new docx.Document({
+        styles: {
+          default: { document: { run: { font: 'Arial', size: 20 } } }
+        },
+        sections: [{
+          properties: {
+            page: {
+              size: { width: 20160, height: 15840 },
+              margin: { top: 720, right: 720, bottom: 720, left: 720 }
+            }
+          },
+          children: [
+            new docx.Paragraph({
+              children: [new docx.TextRun({ text: `Nouvelles entreprises — Canton de ${canton}`, font: 'Arial', size: 40, bold: true, color: '1F3864' })]
+            }),
+            new docx.Paragraph({
+              children: [new docx.TextRun({ text: `Généré le ${now}  ·  ${companies.length} entreprises  ·  Source: ZEFIX`, font: 'Arial', size: 16, color: '999999' })]
+            }),
+            new docx.Paragraph({ children: [new docx.TextRun('')] }),
+            new docx.Table({
+              width: { size: totalWidth, type: docx.WidthType.DXA },
+              columnWidths: colWidths,
+              rows: [headerRow, ...dataRows]
+            }),
+            new docx.Paragraph({ children: [new docx.TextRun('')] }),
+            new docx.Paragraph({
+              children: [new docx.TextRun({ text: 'Téléphone / Email à compléter via local.ch', font: 'Arial', size: 16, color: 'aaaaaa', italics: true })]
+            })
+          ]
+        }]
+      });
+
+      return doc;
+    }
+
+    async function run() {
+      const btn = document.getElementById('btn');
+      const spinner = document.getElementById('spinner');
+      const label = document.getElementById('btn-label');
+      const logEl = document.getElementById('log');
+
+      logEl.innerHTML = '';
+      logEl.classList.remove('visible');
+      setProgress(0);
+
+      btn.disabled = true;
+      spinner.style.display = 'block';
+      label.textContent = 'Connexion à ZEFIX...';
+
+      const canton = document.getElementById('canton').value;
+      const count = parseInt(document.getElementById('count').value) || 100;
+
+      try {
+        log(`Requête ZEFIX · canton=${canton} · max=${count}`, 'info');
+        setProgress(10);
+
+        const companies = await fetchCompanies(canton, count);
+        setProgress(50);
+        log(`${companies.length} entreprises reçues`, 'ok');
+
+        label.textContent = 'Génération du .docx...';
+        setProgress(65);
+
+        const doc = buildDocx(companies, canton);
+        setProgress(85);
+
+        const buffer = await docx.Packer.toBlob(doc);
+        setProgress(100);
+
+        const url = URL.createObjectURL(buffer);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `zefix_${canton.toLowerCase()}_${new Date().toISOString().slice(0,10)}.docx`;
+        a.click();
+        URL.revokeObjectURL(url);
+
+        log(`Fichier téléchargé ✓`, 'ok');
+        label.textContent = 'Générer le .docx';
+
+      } catch (e) {
+        log(`Erreur: ${e.message}`, 'err');
+        label.textContent = 'Réessayer';
+      } finally {
+        btn.disabled = false;
+        spinner.style.display = 'none';
+      }
+    }
+  </script>
+</body>
+</html>
