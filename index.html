@@ -271,6 +271,7 @@
       });
       if (!res.ok) throw new Error(`API error ${res.status}`);
       const data = await res.json();
+      console.log('ZEFIX raw response:', JSON.stringify(data).slice(0, 500));
       return data.list || data.firms || data || [];
     }
 
