@@ -296,10 +296,10 @@
         searchType: 'ACTIVE'
       });
 
-      const res = await fetch('https://www.zefix.ch/ZefixREST/api/v1/firm/search.json', {
+      const res = await fetch('/api/zefix', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
-        body
+        body: JSON.stringify({ canton, count })
       });
 
       if (!res.ok) throw new Error(`ZEFIX HTTP ${res.status}`);
