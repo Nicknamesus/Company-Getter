@@ -5,11 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>ZEFIX — Vaud Leads</title>
   <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@700;800&display=swap" rel="stylesheet" />
-  <script src="https://cdn.jsdelivr.net/npm/docx@7.8.2/build/index.js"></script>
-<script>
-  const { Document, Packer, Paragraph, TextRun, Table, TableRow, TableCell,
-          BorderStyle, WidthType, ShadingType, VerticalAlign } = docx;
-</script>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -206,7 +202,7 @@
     <div class="header">
       <div class="tag">// Lead Generator</div>
       <h1>ZEFIX<br/><span>Leads</span></h1>
-      <p class="sub">Génère un .docx avec les dernières entreprises enregistrées<br/>en Suisse — prêt à prospecter.</p>
+      <p class="sub">Génère un .xlsx avec les dernières entreprises enregistrées<br/>en Suisse — prêt à prospecter.</p>
     </div>
 
     <div class="card">
@@ -233,7 +229,7 @@
 
     <button class="btn" id="btn" onclick="run()">
       <span class="spinner" id="spinner"></span>
-      <span id="btn-label">Générer le .docx</span>
+      <span id="btn-label">Générer le .xlsx</span>
     </button>
 
     <div class="progress-wrap" id="progress-wrap">
@@ -276,84 +272,47 @@
       return data.list || data.firms || (Array.isArray(data) ? data : []);
     }
 
-    function makeCell(text, opts = {}) {
-      const border = { style: BorderStyle.SINGLE, size: 1, color: 'CCCCCC' };
-      const borders = { top: border, bottom: border, left: border, right: border };
-
-      return new TableCell({
-        borders,
-        width: { size: opts.width || 2000, type: WidthType.DXA },
-        shading: opts.header
-          ? { fill: '1F3864', type: ShadingType.CLEAR }
-          : { fill: opts.alt ? 'F0F4F8' : 'FFFFFF', type: ShadingType.CLEAR },
-        margins: { top: 80, bottom: 80, left: 120, right: 120 },
-        verticalAlign: VerticalAlign.CENTER,
-        children: [new Paragraph({
-          children: [new TextRun({
-            text: String(text),
-            font: 'Arial',
-            size: opts.header ? 20 : 18,
-            bold: !!opts.header,
-            color: opts.header ? 'FFFFFF' : '1a1a2e'
-          })]
-        })]
-      });
+    function legalFormLabel(lf) {
+      if (!lf) return '';
+      return lf.shortName?.fr || lf.shortName?.de
+          || lf.name?.fr || lf.name?.de
+          || lf.nameFr || lf.nameDe || '';
     }
 
-    function buildDocx(companies, canton) {
-      const now = new Date().toLocaleDateString('fr-CH');
-      const colWidths = [480, 3000, 1600, 1500, 1800, 1440, 1440, 1800];
-      const totalWidth = colWidths.reduce((a, b) => a + b, 0);
-      const headers = ['#', 'Raison sociale', 'Type', 'Localité', 'UID', 'Téléphone', 'Email', 'Notes'];
+    function buildXlsx(companies, canton) {
+      const headers = ['#', 'Raison sociale', 'Type', 'Localité', 'Canton', 'UID', 'Date SOGC', 'Téléphone', 'Email', 'Notes'];
+      const rows = companies.map((c, i) => [
+        i + 1,
+        c.name || '',
+        legalFormLabel(c.legalForm),
+        c.legalSeat || '',
+        c.canton || '',
+        c.uid || '',
+        c.sogcDate || '',
+        '', '', ''
+      ]);
 
-      const headerRow = new TableRow({
-        tableHeader: true,
-        children: headers.map((h, i) => makeCell(h, { width: colWidths[i], header: true }))
-      });
+      const aoa = [headers, ...rows];
+      const ws = XLSX.utils.aoa_to_sheet(aoa);
 
-      const dataRows = companies.map((c, i) => new TableRow({
-        children: [
-          makeCell(i + 1,                                                          { width: colWidths[0], alt: i%2===1 }),
-          makeCell(c.name || '',                                                   { width: colWidths[1], alt: i%2===1 }),
-          makeCell(c.legalForm?.shortName?.fr || c.legalForm?.shortName?.de || c.legalForm?.name?.fr || c.legalForm?.name?.de || c.legalForm?.nameFr || c.legalForm?.nameDe || '', { width: colWidths[2], alt: i%2===1 }),
-          makeCell(c.legalSeat || c.address?.city || '',                           { width: colWidths[3], alt: i%2===1 }),
-          makeCell(c.uid || '',                                                    { width: colWidths[4], alt: i%2===1 }),
-          makeCell('', { width: colWidths[5], alt: i%2===1 }),
-          makeCell('', { width: colWidths[6], alt: i%2===1 }),
-          makeCell('', { width: colWidths[7], alt: i%2===1 }),
-        ]
-      }));
+      ws['!cols'] = [
+        { wch: 4 },   // #
+        { wch: 45 },  // Raison sociale
+        { wch: 18 },  // Type
+        { wch: 22 },  // Localité
+        { wch: 8 },   // Canton
+        { wch: 18 },  // UID
+        { wch: 12 },  // Date SOGC
+        { wch: 16 },  // Téléphone
+        { wch: 28 },  // Email
+        { wch: 24 }   // Notes
+      ];
+      ws['!freeze'] = { xSplit: 0, ySplit: 1 };
+      ws['!autofilter'] = { ref: XLSX.utils.encode_range({ s: { c: 0, r: 0 }, e: { c: headers.length - 1, r: rows.length } }) };
 
-      const doc = new Document({
-        sections: [{
-          properties: {
-            page: {
-              size: { width: 20160, height: 15840 },
-              margin: { top: 720, right: 720, bottom: 720, left: 720 }
-            }
-          },
-          children: [
-            new Paragraph({
-              children: [new TextRun({ text: `Nouvelles entreprises — Canton de ${canton}`, font: 'Arial', size: 40, bold: true, color: '1F3864' })]
-            }),
-            new Paragraph({
-              children: [new TextRun({ text: `Généré le ${now}  ·  ${companies.length} entreprises  ·  Source: ZEFIX`, font: 'Arial', size: 16, color: '999999' })]
-            }),
-            new Paragraph({ children: [new TextRun({ text: '' })] }),
-            new Table({
-              width: { size: totalWidth, type: WidthType.DXA },
-              columnWidths: colWidths,
-              rows: [headerRow, ...dataRows]
-            }),
-            new Paragraph({ children: [new TextRun({ text: '' })] }),
-            new Paragraph({
-              children: [new TextRun({ text: 'Téléphone / Email à compléter via local.ch', font: 'Arial', size: 16, color: 'aaaaaa', italics: true })]
-            })
-          ]
-        }]
-      });
-
-      return doc;
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, `ZEFIX ${canton}`);
+      return wb;
     }
 
     async function run() {
@@ -379,26 +338,26 @@
 
         const companies = await fetchCompanies(canton, count);
         setProgress(50);
-        log(`${companies.length} entreprises reçues`, 'ok');
+        log(`${companies.length} entreprises reçues`, companies.length ? 'ok' : 'err');
 
-        label.textContent = 'Génération du .docx...';
+        if (companies.length === 0) {
+          log(`Vérifie la console (ZEFIX debug:) pour les détails`, 'err');
+          label.textContent = 'Réessayer';
+          return;
+        }
+
+        label.textContent = 'Génération du .xlsx...';
         setProgress(65);
 
-        const doc = buildDocx(companies, canton);
+        const wb = buildXlsx(companies, canton);
         setProgress(85);
 
-        const blob = await Packer.toBlob(doc);
+        const filename = `zefix_${canton.toLowerCase()}_${new Date().toISOString().slice(0,10)}.xlsx`;
+        XLSX.writeFile(wb, filename);
         setProgress(100);
 
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `zefix_${canton.toLowerCase()}_${new Date().toISOString().slice(0,10)}.docx`;
-        a.click();
-        URL.revokeObjectURL(url);
-
         log(`Fichier téléchargé ✓`, 'ok');
-        label.textContent = 'Générer le .docx';
+        label.textContent = 'Générer le .xlsx';
 
       } catch (e) {
         log(`Erreur: ${e.message}`, 'err');
