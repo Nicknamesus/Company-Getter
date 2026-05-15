@@ -271,8 +271,9 @@
       });
       if (!res.ok) throw new Error(`API error ${res.status}`);
       const data = await res.json();
-      console.log('ZEFIX raw response:', JSON.stringify(data).slice(0, 500));
-      return data.list || data.firms || data || [];
+      console.log('ZEFIX raw response:', data);
+      if (data.debug) console.log('ZEFIX debug:', data.debug);
+      return data.list || data.firms || (Array.isArray(data) ? data : []);
     }
 
     function makeCell(text, opts = {}) {
@@ -314,8 +315,8 @@
         children: [
           makeCell(i + 1,                                                          { width: colWidths[0], alt: i%2===1 }),
           makeCell(c.name || '',                                                   { width: colWidths[1], alt: i%2===1 }),
-          makeCell(c.legalForm?.nameFr || c.legalForm?.nameDe || '',              { width: colWidths[2], alt: i%2===1 }),
-          makeCell(c.address?.city || '',                                          { width: colWidths[3], alt: i%2===1 }),
+          makeCell(c.legalForm?.shortName?.fr || c.legalForm?.shortName?.de || c.legalForm?.name?.fr || c.legalForm?.name?.de || c.legalForm?.nameFr || c.legalForm?.nameDe || '', { width: colWidths[2], alt: i%2===1 }),
+          makeCell(c.legalSeat || c.address?.city || '',                           { width: colWidths[3], alt: i%2===1 }),
           makeCell(c.uid || '',                                                    { width: colWidths[4], alt: i%2===1 }),
           makeCell('', { width: colWidths[5], alt: i%2===1 }),
           makeCell('', { width: colWidths[6], alt: i%2===1 }),
