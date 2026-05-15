@@ -1,4 +1,9 @@
 {
   "outputDirectory": ".",
-  "rewrites": [{ "source": "/(.*)", "destination": "/index.html" }]
+  "rewrites": [{ "source": "/(.*)", "destination": "/index.html" }],
+  "functions": {
+    "api/*.js": {
+      "runtime": "@vercel/node"
+    }
+  }
 }
